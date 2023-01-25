@@ -63,9 +63,15 @@ for img_path in img_paths:
         #     continue
 
         # build dict
+        # Retrieves only value in series when using iloc[0]
         if subj_id not in subj_data:
-            subj_data[subj_id] = {'age': rows.loc[(df['ScanID'] == subj_id)]['Age (Years)'], 'sex': rows.loc[(df['ScanID'] == subj_id)]['Biological Sex (Female = 0; Male = 1)'], 'handedness': rows.loc[(df['ScanID'] == subj_id)]['Handedness'], 'img_paths': []}
+            subj_data[subj_id] = {'age': rows.loc[(df['ScanID'] == subj_id)]['Age (Years)'].iloc[0], 'sex': rows.loc[(df['ScanID'] == subj_id)]['Biological Sex (Female = 0; Male = 1)'].iloc[0], 'handedness': rows.loc[(df['ScanID'] == subj_id)]['Handedness'].iloc[0], 'img_paths': []}
 
+        # Accessing specific elements
+        if 'Both' in subj_data[subj_id]['handedness']:
+            print(f'{subj_id} is both-handed')
+
+     
         # if rows.iloc[i]['EXAMDATE'] in subj_data[subj_id]['date']:
         #     print('Multiple image at same date', subj_id, rows.iloc[i]['EXAMDATE'])
         #     continue
@@ -144,7 +150,7 @@ for img_path in img_paths:
 #     num_cls[info['label']] += 1
 #     num_ts[num_timestep] += 1
 #     counts[info['label'], num_timestep] += 1
-print('Number of subjects: ', len(subj_data))
+print('Number of scans: ', len(subj_data))
 # print('Max number of timesteps: ', max_timestep)
 # print('Number of each timestep', num_ts)
 # print('Number of each class', num_cls)
