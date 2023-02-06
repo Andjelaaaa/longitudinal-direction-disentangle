@@ -36,7 +36,7 @@ if not os.path.exists(config['ckpt_path']):     # test, not exists
     os.makedirs(config['ckpt_path'])
     save_config_yaml(config['ckpt_path'], config)
 elif config['load_yaml']:       # exist and use yaml config
-    print('Load config ', os.path.join(config['ckpt_path'], 'config.yaml'))
+    print('Load config ', os.path.join(config['ckpt_path'], 'config_CP.yaml'))
     flag, config_load = load_config_yaml(os.path.join(config['ckpt_path'], 'config.yaml'))
     if flag:    # load yaml success
         print('load yaml config file')
@@ -421,6 +421,9 @@ def evaluate(phase='val', set='val', save_res=True, info=''):
             if config['dataset_name'] == 'ADNI':
                 age_thres = [30, 120]
                 age_interval = 10
+            elif config['dataset_name'] == 'CP':
+                age_thres = [2, 7]
+                age_interval = 3
             elif config['dataset_name'] == 'LAB':
                 age_thres = [20, 120]
                 age_interval = 10

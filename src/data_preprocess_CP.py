@@ -1,4 +1,5 @@
 
+from doctest import testfile
 import os
 import glob
 import numpy as np
@@ -9,6 +10,7 @@ import scipy.ndimage
 from datetime import datetime
 import random
 import pdb
+from sklearn.model_selection import GroupKFold
 
 seed = 10
 np.random.seed(seed)
@@ -68,8 +70,8 @@ for img_path in img_paths:
             subj_data[subj_id] = {'age': rows.loc[(df['ScanID'] == subj_id)]['Age (Years)'].iloc[0], 'sex': rows.loc[(df['ScanID'] == subj_id)]['Biological Sex (Female = 0; Male = 1)'].iloc[0], 'handedness': rows.loc[(df['ScanID'] == subj_id)]['Handedness'].iloc[0], 'img_paths': []}
 
         # Accessing specific elements
-        if 'Both' in subj_data[subj_id]['handedness']:
-            print(f'{subj_id} is both-handed')
+        # if 'Both' in subj_data[subj_id]['handedness']:
+        #     print(f'{subj_id} is both-handed')
 
      
         # if rows.iloc[i]['EXAMDATE'] in subj_data[subj_id]['date']:
@@ -224,6 +226,121 @@ if not os.path.exists(h5_img_path):
 #             subj_img.create_dataset(os.path.basename(img_path), data=imgs)
 #         print(i, subj_id)
 
+def FindPair(name):
+    #Outputs patient number, moving and fixed image scanID as strings for further analysis
+    #Possible folder name pairs are below with each string differing in length
+    # name = '10006_CL_Dev_004_CL_Dev_008'
+    # name1 = 'CL_Dev_004_PS15_048'
+    # name2 = 'PS15_048_CL_Dev_004'
+    # name3 = 'PS15_048_PS17_017'
+
+    sub_number = name[:5]
+    
+    #idx contains a list of strings of a given name
+    
+    idx = [s for s in name[6:].split("_")]
+
+
+    if len(idx) == 6:
+        
+        mov = f'{idx[0]}_{idx[1]}_{idx[2]}'
+        fix = f'{idx[3]}_{idx[4]}_{idx[5]}'
+        return(sub_number, mov, fix)
+
+    elif len(idx) == 5:
+        if 'CL' in idx[0]:
+            mov = f'{idx[0]}_{idx[1]}_{idx[2]}'
+            fix = f'{idx[3]}_{idx[4]}'
+            
+            return(sub_number, mov, fix)
+        elif 'PS' in idx[0]:
+            mov = f'{idx[0]}_{idx[1]}'
+            fix = f'{idx[2]}_{idx[3]}_{idx[4]}'
+            
+            return(sub_number, mov, fix)
+
+    elif len(idx) == 4:
+        mov = f'{idx[0]}_{idx[1]}'
+        fix = f'{idx[2]}_{idx[3]}'
+        return(sub_number, mov, fix)
+
+    elif len(idx) == 3:
+        mov = f'{idx[0]}'
+        fix = f'{idx[1]}_{idx[2]}'
+        return(sub_number, mov, fix)
+
+
+    else:
+        print('Not a corresponding folder name', name)
+
+def append_mov_fix(X_list):
+    subj_list = []
+    # print(X_list)
+    for pair_info in X_list:
+        sub_number, mov, fix = FindPair(pair_info)
+        subj_list.append(mov)
+        subj_list.append(fix)
+
+    return subj_list
+
+def GroupedCrossValidationDataPair(PROJECT_DIR, subj_list_postfix, subj_data):
+
+    os.chdir(PROJECT_DIR)
+    DATA_PATH = "images"
+
+    images_path = os.path.join(PROJECT_DIR, DATA_PATH)
+
+    # if label == True:
+    #     LABEL_PATH = "labels"
+    #     labels_path = os.path.join(PROJECT_DIR, LABEL_PATH)
+
+    all_pairs = np.array(sorted(os.listdir(images_path)))
+    
+    patient_id = [name[:5] for name in all_pairs]
+   
+    all_patients = sorted(list(set(patient_id)))
+
+    # Modify patient_id to be 0 to 63 instead of 10006 to 10163
+    dict = {}
+    for i, value in enumerate(all_patients):
+        dict[value]=i
+    modif_patient_id = []
+    for elem in patient_id:
+        for key, value in dict.items():
+            if elem == key:
+                elem = value
+                modif_patient_id.append(elem)
+    
+    group_kfold = GroupKFold(n_splits=5)
+    n_splits = group_kfold.get_n_splits(X=all_pairs, groups=modif_patient_id)
+
+    # Iterate through folds
+    for fold, (train_index, test_index) in enumerate(group_kfold.split(X=all_pairs, groups=modif_patient_id)):
+        X_train, X_test = all_pairs[train_index], all_pairs[test_index]
+        # print(len(X_train), len(X_test))
+        # Take 10% of test for validation
+        X_val = X_test[:int(0.5*len(X_test))]
+        # print(len(X_val))
+        X_test_rest = sorted(set(X_test) - set(X_val))
+
+
+        subj_train_list = append_mov_fix(X_train)
+        subj_val_list = append_mov_fix(X_val)
+        subj_test_list = append_mov_fix(X_test_rest)
+
+
+        # print(subj_train_list)
+        subj_id_list_train, case_id_list_train = get_subj_pair_case_id_list(subj_data, subj_train_list)
+        
+        subj_id_list_val, case_id_list_val = get_subj_pair_case_id_list(subj_data, subj_val_list)
+        subj_id_list_test, case_id_list_test = get_subj_pair_case_id_list(subj_data, subj_test_list)
+
+        save_pair_data_txt('/media/andjela/SeagatePor1/CP/data/CP/fold'+str(fold)+'_train_' + subj_list_postfix + '.txt', subj_id_list_train, case_id_list_train)
+        save_pair_data_txt('/media/andjela/SeagatePor1/CP/data/CP/'+str(fold)+'_val_' + subj_list_postfix + '.txt', subj_id_list_val, case_id_list_val)
+        save_pair_data_txt('/media/andjela/SeagatePor1/CP/data/CP/'+str(fold)+'_test_' + subj_list_postfix + '.txt', subj_id_list_test, case_id_list_test)
+
+        
+
 def save_data_txt(path, subj_id_list, case_id_list):
     with open(path, 'w') as ft:
         for subj_id, case_id in zip(subj_id_list, case_id_list):
@@ -241,21 +358,25 @@ def save_single_data_txt(path, subj_id_list, case_id_list):
             ft.write(subj_id+' '+case_id[0]+' '+str(case_id[1])+'\n')
 
 def get_subj_pair_case_id_list(subj_data, subj_id_list):
-    subj_id_list_full = []
+    
     case_id_list_full = []
+    
     for subj_id in subj_id_list:
-        case_id_list = subj_data[subj_id]['img_paths']
-        for i in range(len(case_id_list)):
-            for j in range(i+1, len(case_id_list)):
-                subj_id_list_full.append(subj_id)
-                case_id_list_full.append([case_id_list[i],case_id_list[j],i,j])
+        case_id_list_full.append(subj_data[subj_id]['img_paths'])
+        print('HEY')
+        # print(len(case_id_list))
+        # print('case_id', case_id_list)
+    for i in range(len(case_id_list_full)):
+        for j in range(i+1, len(case_id_list_full)):
+            subj_id_list.append(subj_id)
+            case_id_list_full.append([case_id_list_full[i],case_id_list_full[j],i,j])
 
                 # pdb.set_trace()
                 # filter out pairs that are too close
                 # if subj_data[subj_id]['date_interval'][j] - subj_data[subj_id]['date_interval'][i] >= 2:
                 #     subj_id_list_full.append(subj_id)
                 #     case_id_list_full.append([case_id_list[i],case_id_list[j],i,j])
-    return subj_id_list_full, case_id_list_full
+    return subj_id_list, case_id_list_full
 
 def get_subj_single_case_id_list(subj_data, subj_id_list):
     subj_id_list_full = []
@@ -275,11 +396,18 @@ def get_subj_single_case_id_list(subj_data, subj_id_list):
 # subj_list_postfix = 'NC_AD'
 # subj_list_postfix = 'pMCI_sMCI'
 # subj_list_postfix = 'NC'
+subj_list_postfix = 'CP'
 
 
 # subj_list_postfix = 'AD_pMCI_sMCI'
 # subj_id_all = np.load('/data/jiahong/data/ADNI/ADNI_longitudinal_subj.npy', allow_pickle=True).item()
+# subj_id_all = 
 
+res = '1.0'
+PROJECT_DIR = f"/media/andjela/SeagatePor1/CP/RigidReg_{res}"
+
+
+GroupedCrossValidationDataPair(PROJECT_DIR, subj_list_postfix, subj_data)
 
 # for fold in range(5):
 #     # for class_name in ['NC', 'AD', 'pMCI', 'sMCI']:
@@ -290,18 +418,18 @@ def get_subj_single_case_id_list(subj_data, subj_id_list):
 #     subj_test_list = []
 #     subj_val_list = []
 #     subj_train_list = []
-#     for class_name in ['AD', 'pMCI', 'sMCI']:
-#         class_list = subj_id_all[class_name]
-#         np.random.shuffle(class_list)
-#         num_class = len(class_list)
+#     # for class_name in ['AD', 'pMCI', 'sMCI']:
+#     #     class_list = subj_id_all[class_name]
+#     #     np.random.shuffle(class_list)
+#     #     num_class = len(class_list)
 
-#         class_test = class_list[fold*int(0.2*num_class):(fold+1)*int(0.2*num_class)]
-#         class_train_val = class_list[:fold*int(0.2*num_class)] + class_list[(fold+1)*int(0.2*num_class):]
-#         class_val = class_train_val[:int(0.1*len(class_train_val))]
-#         class_train = class_train_val[int(0.1*len(class_train_val)):]
-#         subj_test_list.extend(class_test)
-#         subj_train_list.extend(class_train)
-#         subj_val_list.extend(class_val)
+#     #     class_test = class_list[fold*int(0.2*num_class):(fold+1)*int(0.2*num_class)]
+#     #     class_train_val = class_list[:fold*int(0.2*num_class)] + class_list[(fold+1)*int(0.2*num_class):]
+#     #     class_val = class_train_val[:int(0.1*len(class_train_val))]
+#     #     class_train = class_train_val[int(0.1*len(class_train_val)):]
+#     #     subj_test_list.extend(class_test)
+#     #     subj_train_list.extend(class_train)
+#     #     subj_val_list.extend(class_val)
 
 #     if 'single' in subj_list_postfix:
 #         subj_id_list_train, case_id_list_train = get_subj_single_case_id_list(subj_data, subj_train_list)
@@ -313,9 +441,10 @@ def get_subj_single_case_id_list(subj_data, subj_id_list):
 #         save_single_data_txt('../data/ADNI/fold'+str(fold)+'_test_' + subj_list_postfix + '.txt', subj_id_list_test, case_id_list_test)
 #     else:
 #         subj_id_list_train, case_id_list_train = get_subj_pair_case_id_list(subj_data, subj_train_list)
+#         print('id_train', subj_id_list_train)
 #         subj_id_list_val, case_id_list_val = get_subj_pair_case_id_list(subj_data, subj_val_list)
 #         subj_id_list_test, case_id_list_test = get_subj_pair_case_id_list(subj_data, subj_test_list)
 
-#         save_pair_data_txt('../data/ADNI/fold'+str(fold)+'_train_' + subj_list_postfix + '.txt', subj_id_list_train, case_id_list_train)
-#         save_pair_data_txt('../data/ADNI/fold'+str(fold)+'_val_' + subj_list_postfix + '.txt', subj_id_list_val, case_id_list_val)
-#         save_pair_data_txt('../data/ADNI/fold'+str(fold)+'_test_' + subj_list_postfix + '.txt', subj_id_list_test, case_id_list_test)
+#         save_pair_data_txt('/media/andjela/SeagatePor1/CP/data/CP/fold'+str(fold)+'_train_' + subj_list_postfix + '.txt', subj_id_list_train, case_id_list_train)
+#         save_pair_data_txt('/media/andjela/SeagatePor1/CP/data/CP/'+str(fold)+'_val_' + subj_list_postfix + '.txt', subj_id_list_val, case_id_list_val)
+#         save_pair_data_txt('/media/andjela/SeagatePor1/CP/data/CP/'+str(fold)+'_test_' + subj_list_postfix + '.txt', subj_id_list_test, case_id_list_test)

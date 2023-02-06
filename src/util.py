@@ -128,6 +128,7 @@ class LongitudinalPairDataset(Dataset):
         return {'img1': img1, 'img2': img2, 'label': label, 'interval': interval, 'age': age, 'sex': sex, 'score': score,
                 'subj_id': subj_id, 'case_order': np.array([case_order_1, case_order_2])}
 
+
 class LongitudinalPairDatasetMix(Dataset):
     def __init__(self, dataset_name, data_img_list, data_noimg_list, subj_id_list, case_id_list, dataset_idx_list, aug=False):
         self.data_img_list = data_img_list
@@ -148,12 +149,12 @@ class LongitudinalPairDatasetMix(Dataset):
         case_id_2 = self.case_id_list[1][idx]
         case_order_1 = self.case_id_list[2][idx]
         case_order_2 = self.case_id_list[3][idx]
-        if dataset_idx == 0:
-            label = np.array(self.data_noimg_list[dataset_idx][subj_id]['label'])
-        else:
-            label = np.array(self.data_noimg_list[dataset_idx][subj_id]['label']) + 5
+        # if dataset_idx == 0:
+        #     label = np.array(self.data_noimg_list[dataset_idx][subj_id]['label'])
+        # else:
+        #     label = np.array(self.data_noimg_list[dataset_idx][subj_id]['label']) + 5
         # label_all = np.array(self.data_noimg[subj_id]['label_all'])[[case_order_1, case_order_2]]
-        interval = np.array(self.data_noimg_list[dataset_idx][subj_id]['date_interval'][case_order_2] - self.data_noimg_list[dataset_idx][subj_id]['date_interval'][case_order_1])
+        interval = np.array(self.data_noimg_list[dataset_idx][subj_id]['age'][case_order_2] - self.data_noimg_list[dataset_idx][subj_id]['age'][case_order_1])
         age = np.array(self.data_noimg_list[dataset_idx][subj_id]['age'] + self.data_noimg_list[dataset_idx][subj_id]['date_interval'][case_order_1])
         # print(subj_id, case_order_1, case_order_2, label_all, interval)
         try:
@@ -178,21 +179,23 @@ class LongitudinalPairDatasetMix(Dataset):
             rand_idx = np.random.randint(0, 10)
         else:
             rand_idx = 0
+        print(case_id_1, case_id_2)
         img1 = np.array(self.data_img_list[dataset_idx][subj_id][case_id_1][rand_idx])
         img2 = np.array(self.data_img_list[dataset_idx][subj_id][case_id_2][rand_idx])
 
-        return {'img1': img1, 'img2': img2, 'label': label, 'interval': interval, 'age': age, 'sex': sex, 'score': score}
+        return {'img1': img1, 'img2': img2, 'interval': interval, 'age': age, 'sex': sex, 'score': score}
 
 class LongitudinalData(object):
     def __init__(self, dataset_name, data_path, img_file_name='ADNI_longitudinal_img.h5',
                 noimg_file_name='ADNI_longitudinal_noimg.h5', subj_list_postfix='NC_AD', data_type='single',
                 aug=False, batch_size=16, num_fold=5, fold=0, shuffle=True, num_workers=0, train_all=False):
-        if dataset_name == 'ADNI' or dataset_name == 'LAB':
+        if dataset_name == 'ADNI' or dataset_name == 'LAB' or dataset_name == 'CP':
             data_img = h5py.File(os.path.join(data_path, img_file_name), 'r')
             data_noimg = h5py.File(os.path.join(data_path, noimg_file_name), 'r')
 
             if train_all:
                 subj_id_list_train, case_id_list_train = self.load_idx_list(os.path.join(data_path, 'fold'+str(fold)+'_all_'+subj_list_postfix+'.txt'), data_type)
+            
             subj_id_list_train, case_id_list_train = self.load_idx_list(os.path.join(data_path, 'fold'+str(fold)+'_train_'+subj_list_postfix+'.txt'), data_type)
             subj_id_list_val, case_id_list_val = self.load_idx_list(os.path.join(data_path, 'fold'+str(fold)+'_val_'+subj_list_postfix+'.txt'), data_type)
             subj_id_list_test, case_id_list_test = self.load_idx_list(os.path.join(data_path, 'fold'+str(fold)+'_test_'+subj_list_postfix+'.txt'), data_type)
