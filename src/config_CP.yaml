@@ -15,7 +15,7 @@ ckpt_name: 'LSSL_42100.pth.tar'
 # dataset
 data_type: 'pair'
 dataset_name: 'CP'
-data_path: '../media/andjela/SeagatePor1/CP/data/CP/'
+data_path: '/media/andjela/SeagatePor1/CP/data/CP/'
 # img_file_name: 'ADNI_longitudinal_img.h5'
 img_file_name: 'CP_longitudinal_img.h5'
 noimg_file_name: 'CP_longitudinal_noimg.h5'
@@ -61,11 +61,13 @@ lambda_reg: 0.
 lambda_dir: 0.
 lambda_dis: 0.
 
-# enc_dec_type: 'simple'
+enc_dec_type: 'simple'
 # enc_dec_type: 'normal'
-enc_dec_type: 'simple-mapping'
+# enc_dec_type: 'simple-mapping'
+is_mapping: False
 
 # LDD on ADNI
+ckpt_timelabel: '2022_2_6_18_21'
 # ckpt_timelabel: '2021_4_13_10_43'         # step 1: LSSL on all
 # ckpt_timelabel: '2021_5_17_18_16'           # step 1: LSSL, based on 2021_4_13_10_43, froze encoder
 # ckpt_timelabel: '2021_4_22_22_14'         # step 2: LDD, based on LSSL on all 2021_4_13_10_43

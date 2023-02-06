@@ -20,7 +20,7 @@ torch.cuda.manual_seed(seed)
 np.random.seed(seed)
 torch.backends.cudnn.deterministic=True
 
-_, config = load_config_yaml('config.yaml')
+_, config = load_config_yaml('config_CP.yaml')
 config['device'] = torch.device('cuda:'+ config['gpu'])
 
 if config['ckpt_timelabel'] and (config['phase'] == 'test' or config['continue_train'] == True):

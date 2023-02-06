@@ -16,12 +16,12 @@ import scipy.misc as sci
 import scipy.ndimage
 import pickle
 import shutil
-import skimage
-import skimage.io
-import skimage.transform
-import skimage.color
-from skimage.measure import compare_nrmse, compare_psnr, compare_ssim
-import skimage.metrics
+# import skimage
+# import skimage.io
+# import skimage.transform
+# import skimage.color
+# from skimage.measure import compare_nrmse, compare_psnr, compare_ssim
+# import skimage.metrics
 import sklearn.metrics
 import matplotlib as mpl
 import nibabel as nib
