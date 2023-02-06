@@ -79,10 +79,10 @@ class LongitudinalPairDataset(Dataset):
         case_id_2 = self.case_id_list[1][idx]
         case_order_1 = self.case_id_list[2][idx]
         case_order_2 = self.case_id_list[3][idx]
-        try:
-            label = np.array(self.data_noimg[subj_id]['label'])
-        except:
-            pdb.set_trace()
+        # try:
+        #     label = np.array(self.data_noimg[subj_id]['label'])
+        # except:
+        #     pdb.set_trace()
         # label_all = np.array(self.data_noimg[subj_id]['label_all'])[[case_order_1, case_order_2]]
         if case_order_2 == case_order_1:
             try:
@@ -90,7 +90,7 @@ class LongitudinalPairDataset(Dataset):
             except:
                 interval = np.array(self.data_noimg[subj_id]['date_interval'][case_order_2] - self.data_noimg[subj_id]['date_interval'][case_order_1])
         else:
-            interval = np.array(self.data_noimg[subj_id]['date_interval'][case_order_2] - self.data_noimg[subj_id]['date_interval'][case_order_1])
+            interval = np.array(self.data_noimg[subj_id]['age'][case_order_2] - self.data_noimg[subj_id]['age'][case_order_1])
         age = np.array(self.data_noimg[subj_id]['age'] + self.data_noimg[subj_id]['date_interval'][case_order_1])
         # print(subj_id, case_order_1, case_order_2, label_all, interval)
         try:
@@ -125,7 +125,7 @@ class LongitudinalPairDataset(Dataset):
         img1 = np.array(self.data_img[subj_id][case_id_1][rand_idx])
         img2 = np.array(self.data_img[subj_id][case_id_2][rand_idx])
 
-        return {'img1': img1, 'img2': img2, 'label': label, 'interval': interval, 'age': age, 'sex': sex, 'score': score,
+        return {'img1': img1, 'img2': img2, 'interval': interval, 'age': age, 'sex': sex, 'score': score,
                 'subj_id': subj_id, 'case_order': np.array([case_order_1, case_order_2])}
 
 
