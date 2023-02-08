@@ -2,7 +2,7 @@
 phase: 'train'
 # phase: 'test'
 load_yaml: True
-gpu: '1'
+gpu: '0'
 
 # pretraining setting
 continue_train: False

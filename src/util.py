@@ -75,6 +75,7 @@ class LongitudinalPairDataset(Dataset):
 
     def __getitem__(self, idx):
         subj_id = self.subj_id_list[idx]
+        subj_id = str(subj_id)
         case_id_1 = self.case_id_list[0][idx]
         case_id_2 = self.case_id_list[1][idx]
         case_order_1 = self.case_id_list[2][idx]
@@ -91,8 +92,9 @@ class LongitudinalPairDataset(Dataset):
                 interval = np.array(self.data_noimg[subj_id]['date_interval'][case_order_2] - self.data_noimg[subj_id]['date_interval'][case_order_1])
         else:
             interval = np.array(self.data_noimg[subj_id]['age'][case_order_2] - self.data_noimg[subj_id]['age'][case_order_1])
-        age = np.array(self.data_noimg[subj_id]['age'] + self.data_noimg[subj_id]['date_interval'][case_order_1])
-        # print(subj_id, case_order_1, case_order_2, label_all, interval)
+            age = np.array(self.data_noimg[subj_id]['age'])
+        # age = np.array(self.data_noimg[subj_id]['age'] + self.data_noimg[subj_id]['date_interval'][case_order_1])
+        print(subj_id)
         try:
             sex = np.array(self.data_noimg[subj_id]['sex'])
         except:
@@ -122,8 +124,8 @@ class LongitudinalPairDataset(Dataset):
             rand_idx = np.random.randint(0, 10)
         else:
             rand_idx = 0
-        img1 = np.array(self.data_img[subj_id][case_id_1][rand_idx])
-        img2 = np.array(self.data_img[subj_id][case_id_2][rand_idx])
+        img1 = np.array(self.data_img[subj_id][os.path.basename(case_id_1)])#[case_id_1][rand_idx])
+        img2 = np.array(self.data_img[subj_id][os.path.basename(case_id_2)])#[case_id_2][rand_idx])
 
         return {'img1': img1, 'img2': img2, 'interval': interval, 'age': age, 'sex': sex, 'score': score,
                 'subj_id': subj_id, 'case_order': np.array([case_order_1, case_order_2])}
